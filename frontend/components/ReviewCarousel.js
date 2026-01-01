@@ -10,7 +10,7 @@ export default function ReviewCarousel() {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/reviews');
+       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`);
         const data = await res.json();
         
         // Filter to only show approved reviews

@@ -25,9 +25,9 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const [orderRes, pizzaRes, reviewRes] = await Promise.all([
-        fetch('http://localhost:5000/api/payment/orders'),
-        fetch('http://localhost:5000/api/pizzas'),
-        fetch('http://localhost:5000/api/reviews/admin/all')
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/orders`),
+  fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pizzas`),
+  fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/admin/all`)
       ]);
 
       if (orderRes.ok) setOrders(await orderRes.json());

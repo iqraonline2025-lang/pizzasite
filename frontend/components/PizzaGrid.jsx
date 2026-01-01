@@ -13,7 +13,8 @@ export default function PizzaGrid() {
   const INITIAL_LIMIT = 6;
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/pizzas")
+    // ✅ Use Render backend URL via environment variable
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pizzas`)
       .then(res => res.json())
       .then(data => setPizzas(data))
       .catch(err => console.error("Fetch error:", err));
@@ -22,7 +23,6 @@ export default function PizzaGrid() {
   const filteredPizzas = pizzas.filter(pizza => {
     const matchesAvailable = onlyAvailable ? pizza.available : true;
     
-    // FIX: Case-insensitive category matching
     const pizzaCat = pizza.category?.toLowerCase() || "";
     const filterCat = filter.toLowerCase();
     const matchesCategory = filter === "All" || pizzaCat === filterCat;

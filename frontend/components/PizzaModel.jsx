@@ -25,7 +25,7 @@ export default function PizzaModal({ pizza, onClose }) {
 
   const handleAddToCart = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/validate-price", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/validate-price`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
