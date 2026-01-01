@@ -122,21 +122,23 @@ export default function CheckoutPage() {
           </section>
 
           {/* PAYMENT SECTION */}
-          <section className="opacity-100">
-            <h2 className="text-3xl font-black uppercase mb-8 flex items-center gap-3">
-              <Lock /> 2. Payment
-            </h2>
+          {clientSecret && (
+            <section className="opacity-100">
+              <h2 className="text-3xl font-black uppercase mb-8 flex items-center gap-3">
+                <Lock /> 2. Payment
+              </h2>
 
-            <Elements
-              stripe={stripePromise}
-              options={{
-                clientSecret: clientSecret || "test_secret", // temporary dummy secret for visibility
-                appearance: { theme: 'stripe' }
-              }}
-            >
-              <CheckoutForm cartTotal={cartTotal} disabled={!clientSecret} />
-            </Elements>
-          </section>
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: { theme: 'stripe' }
+                }}
+              >
+                <CheckoutForm cartTotal={cartTotal} disabled={!clientSecret} />
+              </Elements>
+            </section>
+          )}
         </div>
 
         {/* RIGHT: ORDER SUMMARY */}
@@ -193,3 +195,4 @@ function CheckoutForm({ cartTotal, disabled }) {
     </form>
   );
 }
+
