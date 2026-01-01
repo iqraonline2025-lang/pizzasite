@@ -32,6 +32,10 @@ router.patch("/orders/:id", async (req, res) => {
   }
 });
 
+router.get("/create-payment", (req, res) => {
+  res.status(405).json({ error: "Method not allowed. Use POST to create a payment." });
+});
+
 router.post("/create-payment", async (req, res) => {
   try {
     const { amount, items, customerDetails } = req.body;
