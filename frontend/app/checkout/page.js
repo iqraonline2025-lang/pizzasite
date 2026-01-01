@@ -5,7 +5,6 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import { useCart } from '../../context/cartContext';
 import { Truck, Lock, ArrowRight, Loader2 } from 'lucide-react';
 
-// Load Stripe with environment variable
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function CheckoutPage() {
@@ -17,42 +16,32 @@ export default function CheckoutPage() {
   });
   const [apiError, setApiError] = useState("");
 
-  // Trigger backend to create Stripe payment
   const handleProceedToPayment = async () => {
     setApiError("");
-    // Validation
-    const incomplete = Object.values(customerDetails).some(val => val.trim() === "");
-    if (incomplete) {
-      alert("Please fill in all delivery details first.");
+    
+    // Check if details are filled
+    if (Object.values(customerDetails).some(val => val.trim() === "")) {
+      alert("Please fill in all delivery details.");
       return;
     }
 
     setIsInitializing(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/payment/create-payment`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: cart,
-            customerDetails,
-            amount: Math.round(cartTotal * 100) // Convert to pence/cents
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Failed to initialize payment");
-      }
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/create-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart,
+          customerDetails,
+          amount: Math.round(cartTotal * 100) // Convert to pence/cents
+        })
+      });
 
       const data = await response.json();
-      if (!data.clientSecret) throw new Error("Payment initialization failed: missing clientSecret");
+      if (!response.ok) throw new Error(data.error || "Payment initiation failed");
 
       setClientSecret(data.clientSecret);
     } catch (error) {
-      console.error(error);
       setApiError(error.message);
     } finally {
       setIsInitializing(false);
@@ -62,86 +51,43 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#fcfcfc] pt-32 pb-20 px-6 font-sans">
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-16">
-
-        {/* LEFT: DELIVERY & PAYMENT */}
+        
         <div className="flex-grow space-y-12">
+          {/* 1. DELIVERY DETAILS */}
           <section>
-            <h2 className="text-3xl font-black uppercase mb-8 flex items-center gap-3">
-              <Truck /> 1. Delivery
-            </h2>
-
+            <h2 className="text-3xl font-black uppercase mb-8 flex items-center gap-3"><Truck /> 1. Delivery</h2>
             <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Full Name"
-                className="col-span-2 p-4 rounded-xl border"
-                value={customerDetails.name}
-                onChange={e => setCustomerDetails({ ...customerDetails, name: e.target.value })}
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                className="col-span-2 p-4 rounded-xl border"
-                value={customerDetails.email}
-                onChange={e => setCustomerDetails({ ...customerDetails, email: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Street Address"
-                className="col-span-2 p-4 rounded-xl border"
-                value={customerDetails.address}
-                onChange={e => setCustomerDetails({ ...customerDetails, address: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="City"
-                className="p-4 rounded-xl border"
-                value={customerDetails.city}
-                onChange={e => setCustomerDetails({ ...customerDetails, city: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Postcode"
-                className="p-4 rounded-xl border"
-                value={customerDetails.postcode}
-                onChange={e => setCustomerDetails({ ...customerDetails, postcode: e.target.value })}
-              />
+              <input type="text" placeholder="Full Name" className="col-span-2 p-4 rounded-xl border" value={customerDetails.name} onChange={e => setCustomerDetails({...customerDetails, name: e.target.value})} />
+              <input type="email" placeholder="Email" className="col-span-2 p-4 rounded-xl border" value={customerDetails.email} onChange={e => setCustomerDetails({...customerDetails, email: e.target.value})} />
+              <input type="text" placeholder="Address" className="col-span-2 p-4 rounded-xl border" value={customerDetails.address} onChange={e => setCustomerDetails({...customerDetails, address: e.target.value})} />
+              <input type="text" placeholder="City" className="p-4 rounded-xl border" value={customerDetails.city} onChange={e => setCustomerDetails({...customerDetails, city: e.target.value})} />
+              <input type="text" placeholder="Postcode" className="p-4 rounded-xl border" value={customerDetails.postcode} onChange={e => setCustomerDetails({...customerDetails, postcode: e.target.value})} />
             </div>
 
-            {apiError && <p className="text-red-600 mt-2 font-bold">{apiError}</p>}
-
             {!clientSecret && (
-              <button
-                onClick={handleProceedToPayment}
+              <button 
+                onClick={handleProceedToPayment} 
                 disabled={isInitializing}
-                className="mt-6 w-full bg-orange-600 text-white py-5 rounded-2xl font-black uppercase flex items-center justify-center gap-3"
+                className="mt-6 w-full bg-orange-600 text-white py-5 rounded-2xl font-black flex items-center justify-center gap-3 transition-transform hover:scale-[1.02]"
               >
-                {isInitializing ? <Loader2 className="animate-spin" /> : "Confirm Details & Pay"} <ArrowRight />
+                {isInitializing ? <Loader2 className="animate-spin" /> : "Confirm & Pay"} <ArrowRight />
               </button>
             )}
+            {apiError && <p className="text-red-500 mt-4 font-bold">{apiError}</p>}
           </section>
 
-          {/* PAYMENT SECTION */}
+          {/* 2. STRIPE CARD ELEMENT */}
           {clientSecret && (
-            <section className="opacity-100">
-              <h2 className="text-3xl font-black uppercase mb-8 flex items-center gap-3">
-                <Lock /> 2. Payment
-              </h2>
-
-              <Elements
-                stripe={stripePromise}
-                options={{
-                  clientSecret,
-                  appearance: { theme: 'stripe' }
-                }}
-              >
-                <CheckoutForm cartTotal={cartTotal} disabled={!clientSecret} />
+            <section className="animate-in fade-in duration-500">
+              <h2 className="text-3xl font-black uppercase mb-8 flex items-center gap-3"><Lock /> 2. Payment</h2>
+              <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+                <CheckoutForm cartTotal={cartTotal} />
               </Elements>
             </section>
           )}
         </div>
 
-        {/* RIGHT: ORDER SUMMARY */}
+        {/* ORDER SUMMARY */}
         <aside className="lg:w-[400px]">
           <div className="bg-white p-8 rounded-[2rem] border shadow-xl sticky top-32">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Your Order</h3>
@@ -162,19 +108,21 @@ export default function CheckoutPage() {
   );
 }
 
-function CheckoutForm({ cartTotal, disabled }) {
+function CheckoutForm({ cartTotal }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!stripe || !elements || disabled) return;
+    if (!stripe || !elements) return;
     setLoading(true);
 
     const { error } = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: `${window.location.origin}/success` },
+      confirmParams: { 
+        return_url: `${window.location.origin}/success`,
+      },
     });
 
     if (error) {
@@ -186,13 +134,12 @@ function CheckoutForm({ cartTotal, disabled }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement />
-      <button
-        disabled={loading || !stripe || disabled}
-        className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black uppercase"
+      <button 
+        disabled={loading} 
+        className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-600 transition-colors"
       >
-        {loading ? "Verifying..." : `Authorize £${cartTotal.toFixed(2)}`}
+        {loading ? "Processing..." : `Pay £${cartTotal.toFixed(2)} Now`}
       </button>
     </form>
   );
 }
-
